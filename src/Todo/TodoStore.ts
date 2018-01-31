@@ -1,4 +1,4 @@
-import { observable, autorun, computed } from 'mobx';
+import {observable, autorun, computed, action} from 'mobx';
 
 export default class ObservableTodoStore {
     @observable todos: Array<any> = [];
@@ -21,7 +21,7 @@ export default class ObservableTodoStore {
             `Progress: ${this.completedTodosCount}/${this.todos.length}`;
     }
 
-    addTodo(task: any) {
+    @action addTodo(task: any) {
         this.todos.push({
             task: task,
             completed: false,

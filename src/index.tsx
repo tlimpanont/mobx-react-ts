@@ -1,71 +1,53 @@
+declare var window:any;
+
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import registerServiceWorker from './registerServiceWorker';
 import './index.css';
-import ObservableTodoStore, { observableTodoStore } from './TodoStore';
+import {observableTodoStore} from './Todo/TodoStore';
+import {Router, Route} from 'react-router-dom'
+import App from './App';
+import Callback from './Callback/Callback';
+import Home from './Home/Home';
+import Auth from './Auth/Auth';
+import history from './history';
+import TodoList from './Todo/TodoList';
+import {authStore} from "./Store/AuthStore";
+import {Provider} from "mobx-react";
+import { useStrict } from 'mobx';
 
-import { observer } from 'mobx-react';
+const auth = new Auth();
 
-@observer
-class TodoView extends React.Component<any> {
-  render() {
-    const todo = this.props.todo;
-    return (
-      <li onDoubleClick={this.onRename}>
-        <input
-          type="checkbox"
-          checked={todo.completed}
-          onChange={this.onToggleCompleted}
-        />
-        {todo.task}
-        {todo.assignee ? <small>{todo.assignee.name}</small>: null}
-      </li>
-    );
-  }
+const stores = {
+  authStore,
+};
 
-  onToggleCompleted = () => {
-    const todo = this.props.todo;
-    todo.completed = !todo.completed;
-  }
+const MyApp = () => {
+  return (
+    <Provider {...stores}>
+      <Router history={history}>
+        <div>
+          <Route path="/" render={(props) => <App auth={auth} {...props} />}/>
+          <Route path="/home" render={(props) => {
+            return (
+              <div>
+                <Home {...props} />
+                <TodoList store={observableTodoStore}/>
+              </div>
+            )
+          }}/>
+          <Route path="/callback" render={(props) => {
+            auth.handleAuthentication();
+            return <Callback {...props} />
+          }}/>
+        </div>
+      </Router>
+    </Provider>
+  )
+};
 
-  onRename = () => {
-    const todo = this.props.todo;
-    todo.task = prompt('Task name', todo.task) || todo.task;
-  }
-}
-
-interface PropsType {
-  store: ObservableTodoStore;
-}
-
-@observer
-class TodoList extends React.Component<PropsType> {
-  constructor(props: any) {
-    super(props);
-  }
-  render() {
-    const { store } = this.props as any;
-    return (
-      <div>
-        {store.report}
-        <ul>
-          {store.todos.map((todo: any, idx: number) => <TodoView todo={todo} key={idx} />)}
-        </ul>
-        {store.pendingRequests > 0 ? <strong>Loading...</strong> : null}
-        <button onClick={this.onNewTodo}>New Todo</button>
-        <small> (double-click a todo to edit)</small>
-      </div>
-    );
-  }
-
-  onNewTodo = () => {
-    this.props.store.addTodo(prompt('Enter a new todo:', 'coffee plz'));
-  }
-}
-
-ReactDOM.render(
-  <TodoList store={observableTodoStore} />,
-  document.getElementById('root')
-);
+window._____APP_STATE_____ = stores;
+useStrict(true);
+ReactDOM.render(<MyApp/>, document.getElementById('root'));
 
 registerServiceWorker();
